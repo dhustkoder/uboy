@@ -47,15 +47,15 @@ int main(const int argc, const char* const * const argv)
 		return EXIT_FAILURE;
 
 
-	int ret = EXIT_FAILURE;
+	int ret = EXIT_SUCCESS;
+
 	if (!loadrom(data)) {
 		fprintf(stderr, "Couldn't load rom\n");
+		ret = EXIT_FAILURE;
 		goto Lfreedata;
 	}
 
 	freerom();
-	ret = EXIT_SUCCESS;
-
 Lfreedata:
 	free(data);
 	return ret;
