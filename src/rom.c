@@ -19,7 +19,7 @@ static bool readfile(const char* const filename)
 	FILE* const file = fopen(filename, "r");
 	if (file == NULL) {
 		perror("Couldn't open file: ");
-		return NULL;
+		return false;
 	}
 
 	int ret = true;
@@ -43,14 +43,28 @@ bool loadrom(const char* const filename)
 		return false;
 
 	memcpy(romname, &romdata[0x134], 15);
+
+	if (strlen(romname) == 0) {
+		fprintf(stderr, "Couldn't read rom title\n");
+		return false;
+	}
+
 	cgbflag = romdata[0x143];
 	sgbflag = romdata[0x146];
 	romtype = romdata[0x147];
 
-	const uint16_t banks1[9] = { 2, 4, 16, 32, 64, 128, 256, 512 };
-	const uint8_t banks2[3] = { 72, 80, 96 };
-	rom_nbanks = romdata[0x148] <= 0x08 ? banks1[romdata[0x148]]
-	                                 : banks2[romdata[0x148] - 0x52];
+	const uint16_t nbanks1[9] = { 2, 4, 16, 32, 64, 128, 256, 512 };
+	const uint8_t nbanks2[3] = { 72, 80, 96 };
+
+	if (romdata[0x148] <= 0x08) {
+		rom_nbanks = nbanks1[romdata[0x148]];
+	} else if (romdata[0x148] >= 0x52 && romdata[0x148] <= 0x54) {
+		rom_nbanks = nbanks2[romdata[0x148] - 0x52];
+	} else {
+		fprintf(stderr, "Couldn't read number of banks\n");
+		return false;
+	}
+
 	romsize = rom_nbanks * 0x4000;
 
 	printf("Rom Name: %s\n"
