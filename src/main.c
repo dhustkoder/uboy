@@ -21,6 +21,7 @@ int main(int argc, char** argv)
 	fseek(file, 0, SEEK_SET);
 	
 	uint8_t* const data = malloc(size);
+	int ret = EXIT_FAILURE;
 
 	if (data == NULL) {
 		perror("Couldn't allocate memory: ");
@@ -32,12 +33,18 @@ int main(int argc, char** argv)
 		goto Lfreedata;
 	}
 
-	loadrom(data);
+	if (!loadrom(data)) {
+		fprintf(stderr, "Couldn't load rom\n");
+		goto Lfreedata;
+	}
+
 	freerom();
+	ret = EXIT_SUCCESS;
+
 Lfreedata:
 	free(data);
 Lfclose:
 	fclose(file);
-	return EXIT_FAILURE;
+	return ret;
 }
 
