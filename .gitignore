@@ -1,0 +1,11 @@
+build/
+objs/
+asm/
+tests/blargg_cpu_tests/
+src/GC/zelda_bin.h
+*.fns
+*.nes
+*.deb
+*.cdl
+*.o
+*.out
