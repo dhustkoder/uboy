@@ -5,7 +5,7 @@
 
 
 static char romname[16] = { '\0' };
-
+static uint8_t cgbflag = 0;
 
 bool loadrom(const uint8_t* const data)
 {
@@ -13,7 +13,12 @@ bool loadrom(const uint8_t* const data)
 		return false;
 
 	memcpy(romname, &data[0x134], 15);
-	printf("ROM NAME: %s\n", romname);
+	cgbflag = data[0x143];
+
+	printf("ROM NAME: %s\n"
+	       "CGB Flag: $%X\n",
+	       romname, cgbflag);
+
 	return true;
 }
 
