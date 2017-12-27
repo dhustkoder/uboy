@@ -5,13 +5,14 @@
 #include "rom.h"
 
 
-static char romname[16] = { '\0' };
+uint16_t rom_nrombanks = 0;
+uint8_t rom_data[0x4000 * 512];
+
+
+static char romtitle[16] = { '\0' };
 static uint8_t cgbflag = 0;
 static uint8_t sgbflag = 0;
 static uint8_t romtype = 0;
-static uint16_t rom_nbanks = 0;
-static uint32_t romsize = 0;
-static uint8_t romdata[0x4000 * 512];
 
 
 static bool readfile(const char* const filename)
@@ -28,7 +29,7 @@ static bool readfile(const char* const filename)
 	const long size = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	if (fread(romdata, 1, size, file) < (unsigned long)size) {
+	if (fread(rom_data, 1, size, file) < (unsigned long)size) {
 		perror("Couldn't read file: ");
 		ret = false;
 	}
@@ -42,40 +43,38 @@ bool loadrom(const char* const filename)
 	if (!readfile(filename))
 		return false;
 
-	memcpy(romname, &romdata[0x134], 15);
+	memcpy(romtitle, &rom_data[0x134], 15);
 
-	if (strlen(romname) == 0) {
-		fprintf(stderr, "Couldn't read rom title\n");
+	if (strlen(romtitle) == 0) {
+		fprintf(stderr, "Couldn't read rom romtitle\n");
 		return false;
 	}
 
-	cgbflag = romdata[0x143];
-	sgbflag = romdata[0x146];
-	romtype = romdata[0x147];
+	cgbflag = rom_data[0x143];
+	sgbflag = rom_data[0x146];
+	romtype = rom_data[0x147];
 
 	const uint16_t nbanks1[9] = { 2, 4, 16, 32, 64, 128, 256, 512 };
 	const uint8_t nbanks2[3] = { 72, 80, 96 };
 
-	if (romdata[0x148] <= 0x08) {
-		rom_nbanks = nbanks1[romdata[0x148]];
-	} else if (romdata[0x148] >= 0x52 && romdata[0x148] <= 0x54) {
-		rom_nbanks = nbanks2[romdata[0x148] - 0x52];
+	if (rom_data[0x148] <= 0x08) {
+		rom_nrombanks = nbanks1[rom_data[0x148]];
+	} else if (rom_data[0x148] >= 0x52 && rom_data[0x148] <= 0x54) {
+		rom_nrombanks = nbanks2[rom_data[0x148] - 0x52];
 	} else {
 		fprintf(stderr, "Couldn't read number of banks\n");
 		return false;
 	}
 
-	romsize = rom_nbanks * 0x4000;
-
-	printf("Rom Name: %s\n"
+	printf("Rom Title: %s\n"
 	       "CGB Flag: $%X\n"
 	       "SGB Flag: $%X\n"
 	       "Rom Type: $%X\n"
-	       "Rom N Banks: $%X\n"
+	       "Rom Number of ROM Banks: $%X\n"
 	       "Rom Size: $%X\n",
-	       romname, cgbflag,
+	       romtitle, cgbflag,
 	       sgbflag, romtype,
-	       rom_nbanks, romsize);
+	       rom_nrombanks, rom_nrombanks * 0x4000 * 0x10);
 
 
 	return true;
