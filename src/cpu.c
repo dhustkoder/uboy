@@ -1,5 +1,8 @@
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "cpu.h"
+
 
 extern uint16_t rom_nrombanks;
 extern uint8_t rom_data[0x4000 * 512];
@@ -82,6 +85,16 @@ void resetcpu(void)
 
 uint8_t stepcpu(void)
 {
-	return clock_table[rom_data[rgs.pc++]];
+	const uint8_t opcode = rom_data[rgs.pc++];
+
+	switch (opcode) {
+	case 0x00: break;                                              // NOP
+	default:
+		fprintf(stderr, "Unknown Opcode: $%X\n", opcode);
+		exit(EXIT_FAILURE);
+		break;
+	};
+
+	return clock_table[opcode];
 }
 
