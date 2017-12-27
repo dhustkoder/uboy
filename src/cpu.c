@@ -71,6 +71,27 @@ static struct {
 } rgs;
 
 
+static uint8_t memread(const uint16_t addr)
+{
+	if (addr <= 0x7FFF) {
+		return rom_data[addr];
+	} else {
+		fprintf(stderr, "memread Unknown Address: $%X", addr);
+	}
+	return 0x00;
+}
+
+static void memwrite(const uint8_t val, const uint16_t addr)
+{
+	fprintf(stderr, "memwrite at Unknown Address: $%X value $%X", addr, val);
+}
+
+static uint16_t memread16(const uint16_t addr)
+{
+	return (memread(addr + 1)<<8)|memread(addr);
+}
+
+
 void resetcpu(void)
 {
 	memset(&fgs, 0, sizeof fgs);
@@ -89,6 +110,7 @@ uint8_t stepcpu(void)
 
 	switch (opcode) {
 	case 0x00: break;                                              // NOP
+	case 0xC3: rgs.pc = memread16(rgs.pc); break;                  // JP a16
 	default:
 		fprintf(stderr, "Unknown Opcode: $%X\n", opcode);
 		exit(EXIT_FAILURE);
