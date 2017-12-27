@@ -91,6 +91,12 @@ static uint16_t memread16(const uint16_t addr)
 	return (memread(addr + 1)<<8)|memread(addr);
 }
 
+static uint8_t xor(const uint8_t second)
+{
+	const uint8_t result = rgs.a ^ second;
+	fgs.z = !result;
+	return result;
+}
 
 void resetcpu(void)
 {
@@ -106,11 +112,16 @@ void resetcpu(void)
 
 uint8_t stepcpu(void)
 {
+	#define immediate()   (memread(rgs.pc++))
+	#define immediate16() (rgs.pc += 2, memread16(rgs.pc - 2))
+
 	const uint8_t opcode = rom_data[rgs.pc++];
 
 	switch (opcode) {
 	case 0x00: break;                                              // NOP
-	case 0xC3: rgs.pc = memread16(rgs.pc); break;                  // JP a16
+	case 0xC3: rgs.pc = immediate16(); break;                      // JP a16
+	case 0xAF: rgs.a = xor(rgs.a); break;                          // XOR A
+	case 0x21: rgs.hl = immediate16(); break;                      // LD HL, d16
 	default:
 		fprintf(stderr, "Unknown Opcode: $%X\n", opcode);
 		exit(EXIT_FAILURE);
