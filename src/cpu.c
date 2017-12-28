@@ -83,7 +83,7 @@ static uint8_t memread(const uint16_t addr)
 
 static void memwrite(const uint8_t val, const uint16_t addr)
 {
-	fprintf(stderr, "memwrite at Unknown Address: $%X value $%X", addr, val);
+	fprintf(stderr, "memwrite at Unknown Address: $%.4X value $%.2X\n", addr, val);
 }
 
 static uint16_t memread16(const uint16_t addr)
@@ -123,7 +123,8 @@ uint8_t stepcpu(void)
 	case 0xAF: rgs.a = xor(rgs.a); break;                          // XOR A
 	case 0x21: rgs.hl = immediate16(); break;                      // LD HL, d16
 	case 0x0E: rgs.c = immediate(); break;                         // LD C, d8
-	case 0x06: rgs.b = immediate(); break;                         // LD B, d8 
+	case 0x06: rgs.b = immediate(); break;                         // LD B, d8
+	case 0x32: memwrite(rgs.a, rgs.hl--); break;                   // LD (HL-), A
 	default:
 		fprintf(stderr, "Unknown Opcode: $%.2X\n", opcode);
 		exit(EXIT_FAILURE);
