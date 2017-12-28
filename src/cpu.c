@@ -123,6 +123,7 @@ uint8_t stepcpu(void)
 	case 0xAF: rgs.a = xor(rgs.a); break;                          // XOR A
 	case 0x21: rgs.hl = immediate16(); break;                      // LD HL, d16
 	case 0x0E: rgs.c = immediate(); break;                         // LD C, d8
+	case 0x06: rgs.b = immediate(); break;                         // LD B, d8 
 	default:
 		fprintf(stderr, "Unknown Opcode: $%.2X\n", opcode);
 		exit(EXIT_FAILURE);
