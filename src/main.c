@@ -18,6 +18,8 @@ int main(const int argc, const char* const * const argv)
 
 	for (;;) {
 		stepcpu();
+		printcpu();
+		getc(stdin);
 	}
 
 	freerom();

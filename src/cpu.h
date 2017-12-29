@@ -5,6 +5,7 @@
 
 void resetcpu(void);
 uint8_t stepcpu(void);
+void printcpu(void);
 
 
 #endif

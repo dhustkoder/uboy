@@ -28,6 +28,11 @@ static const uint8_t clock_table[256] = {
 /*F*/ 12, 12,  8,  4,  0, 16,  8, 16, 12,  8, 16,  4,  0,  0,  8, 16
 };
 
+static const char* const name_table[256] = {
+	[0x00] = "NOP", [0xC3] = "JP a16", [0xAF] = "XOR A",
+	[0x21] = "LD HL, d16", [0x0E] = "LD C, d8", [0x05] = "DEC B",
+	[0x06] = "LD B, d8", [0x32] = "LD (HL-), A"
+};
 
 static struct {
 	uint16_t pc;
@@ -62,6 +67,8 @@ static struct {
 	};
 
 } rgs;
+
+static long long int cycles;
 
 #define SET_Z(value) (rgs.f |= ((value) != 0)<<7)
 #define SET_N(value) (rgs.f |= ((value) != 0)<<6)
@@ -108,6 +115,7 @@ static uint8_t dec(const uint8_t value)
 
 void resetcpu(void)
 {
+	cycles = 0;
 	rgs.pc = 0x0100;
 	rgs.sp = 0xFFFE;
 	rgs.af = 0x01B0;
@@ -122,6 +130,9 @@ uint8_t stepcpu(void)
 	#define immediate16() (rgs.pc += 2, memread16(rgs.pc - 2))
 
 	const uint8_t opcode = rom_data[rgs.pc++];
+
+	if (name_table[opcode] != NULL)
+		printf("Executing Instruction: %s\n", name_table[opcode]);
 
 	switch (opcode) {
 	case 0x00: break;                                              // NOP
@@ -138,6 +149,21 @@ uint8_t stepcpu(void)
 		break;
 	};
 
+	cycles += clock_table[opcode];
 	return clock_table[opcode];
 }
 
+void printcpu(void)
+{
+	printf("PC: $%.4X\n"
+               "SP: $%.4X\n"
+               "AF: $%.4X\n"
+               "BC: $%.4X\n"
+               "DE: $%.4X\n"
+               "HL: $%.4X\n"
+               "Cycles: %lld\n",
+               rgs.pc, rgs.sp,
+               rgs.af, rgs.bc,
+               rgs.de, rgs.hl,
+               cycles);
+}
