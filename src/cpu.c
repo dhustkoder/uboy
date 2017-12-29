@@ -94,7 +94,7 @@ static uint16_t memread16(const uint16_t addr)
 static uint8_t xor(const uint8_t second)
 {
 	const uint8_t result = rgs.a ^ second;
-	fgs.z = !result;
+	fgs.z = result == 0;
 	return result;
 }
 
