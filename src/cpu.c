@@ -8,7 +8,7 @@ extern uint16_t rom_nrombanks;
 extern uint8_t rom_data[0x4000 * 512];
 
 
-static const uint8_t clock_table[256] = {
+static const int8_t clock_table[256] = {
 /*     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
 /*0*/  4, 12,  8,  8,  4,  4,  8,  4, 20,  8,  8,  8,  4,  4,  8,  4,
 /*1*/  0, 12,  8,  8,  4,  4,  8,  4, 12,  8,  8,  8,  4,  4,  8,  4,
@@ -124,7 +124,7 @@ void resetcpu(void)
 	rgs.hl = 0x014D;
 }
 
-uint8_t stepcpu(void)
+int8_t stepcpu(void)
 {
 	#define immediate()   (memread(rgs.pc++))
 	#define immediate16() (rgs.pc += 2, memread16(rgs.pc - 2))
