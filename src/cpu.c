@@ -29,13 +29,6 @@ static const uint8_t clock_table[256] = {
 };
 
 
-static struct { 
-	uint8_t z : 1; 
-	uint8_t n : 1; 
-	uint8_t h : 1; 
-	uint8_t c : 1; 
-} fgs;
-
 static struct {
 	uint16_t pc;
 	uint16_t sp;
@@ -70,6 +63,11 @@ static struct {
 
 } rgs;
 
+#define SET_Z(value) (rgs.f |= ((value) != 0)<<7)
+#define SET_N(value) (rgs.f |= ((value) != 0)<<6)
+#define SET_H(value) (rgs.f |= ((value) != 0)<<5)
+#define SET_C(value) (rgs.f |= ((value) != 0)<<4)
+
 
 static uint8_t memread(const uint16_t addr)
 {
@@ -94,24 +92,22 @@ static uint16_t memread16(const uint16_t addr)
 static uint8_t xor(const uint8_t second)
 {
 	const uint8_t result = rgs.a ^ second;
-	fgs.z = result == 0;
+	SET_Z(result == 0);
 	return result;
 }
 
 static uint8_t dec(const uint8_t value)
 {
 	const uint8_t result = value - 1;
-	fgs.z = result == 0;
-	fgs.h = (((int)(value&0x0F)) - 1) < 0;
-	fgs.n = 1;
+	SET_Z(result == 0);
+	SET_H((((int)(value&0x0F)) - 1) < 0);
+	SET_N(1);
 	return result;
 }
 
 
 void resetcpu(void)
 {
-	memset(&fgs, 0, sizeof fgs);
-	memset(&rgs, 0, sizeof rgs);
 	rgs.pc = 0x0100;
 	rgs.sp = 0xFFFE;
 	rgs.af = 0x01B0;
