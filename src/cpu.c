@@ -98,6 +98,16 @@ static uint8_t xor(const uint8_t second)
 	return result;
 }
 
+static uint8_t dec(const uint8_t value)
+{
+	const uint8_t result = value - 1;
+	fgs.z = result == 0;
+	fgs.h = (((int)(value&0x0F)) - 1) < 0;
+	fgs.n = 1;
+	return result;
+}
+
+
 void resetcpu(void)
 {
 	memset(&fgs, 0, sizeof fgs);
@@ -123,6 +133,7 @@ uint8_t stepcpu(void)
 	case 0xAF: rgs.a = xor(rgs.a); break;                          // XOR A
 	case 0x21: rgs.hl = immediate16(); break;                      // LD HL, d16
 	case 0x0E: rgs.c = immediate(); break;                         // LD C, d8
+	case 0x05: rgs.b = dec(rgs.b); break;                          // DEC B
 	case 0x06: rgs.b = immediate(); break;                         // LD B, d8
 	case 0x32: memwrite(rgs.a, rgs.hl--); break;                   // LD (HL-), A
 	default:
