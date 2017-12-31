@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "cpu.h"
 
 
@@ -31,7 +32,7 @@ static const int8_t clock_table[256] = {
 static const char* const name_table[256] = {
 	[0x00] = "NOP", [0xC3] = "JP a16", [0xAF] = "XOR A",
 	[0x21] = "LD HL, d16", [0x0E] = "LD C, d8", [0x05] = "DEC B",
-	[0x06] = "LD B, d8", [0x32] = "LD (HL-), A"
+	[0x06] = "LD B, d8", [0x32] = "LD (HL-), A", [0x20] = "JP NZ, r8"
 };
 
 static struct {
@@ -70,12 +71,18 @@ static struct {
 
 static long long int cycles;
 
-#define SET_Z(value) (rgs.f |= ((value) != 0)<<7)
-#define SET_N(value) (rgs.f |= ((value) != 0)<<6)
-#define SET_H(value) (rgs.f |= ((value) != 0)<<5)
-#define SET_C(value) (rgs.f |= ((value) != 0)<<4)
+// flags set/get
+static void set_z(const bool value) { rgs.f |= ((value) != 0)<<7; }
+static void set_n(const bool value) { rgs.f |= ((value) != 0)<<6; }
+static void set_h(const bool value) { rgs.f |= ((value) != 0)<<5; }
+static void set_c(const bool value) { rgs.f |= ((value) != 0)<<4; }
+static uint8_t get_z(void) { return (rgs.f&(0x01<<7)) != 0; }
+static uint8_t get_n(void) { return (rgs.f&(0x01<<6)) != 0; }
+static uint8_t get_h(void) { return (rgs.f&(0x01<<5)) != 0; }
+static uint8_t get_c(void) { return (rgs.f&(0x01<<4)) != 0; }
 
 
+// memory operations
 static uint8_t memread(const uint16_t addr)
 {
 	if (addr <= 0x7FFF) {
@@ -96,19 +103,31 @@ static uint16_t memread16(const uint16_t addr)
 	return (memread(addr + 1)<<8)|memread(addr);
 }
 
+static uint8_t immediate(void)
+{
+	return memread(rgs.pc++);
+}
+
+static uint16_t immediate16(void)
+{
+	rgs.pc += 2;
+	return memread16(rgs.pc - 2);
+}
+
+// instructions
 static uint8_t xor(const uint8_t second)
 {
 	const uint8_t result = rgs.a ^ second;
-	SET_Z(result == 0);
+	set_z(result == 0);
 	return result;
 }
 
 static uint8_t dec(const uint8_t value)
 {
 	const uint8_t result = value - 1;
-	SET_Z(result == 0);
-	SET_H((((int)(value&0x0F)) - 1) < 0);
-	SET_N(1);
+	set_z(result == 0);
+	set_h((((int)(value&0x0F)) - 1) < 0);
+	set_n(1);
 	return result;
 }
 
@@ -124,11 +143,9 @@ void resetcpu(void)
 	rgs.hl = 0x014D;
 }
 
+
 int8_t stepcpu(void)
 {
-	#define immediate()   (memread(rgs.pc++))
-	#define immediate16() (rgs.pc += 2, memread16(rgs.pc - 2))
-
 	const uint8_t opcode = rom_data[rgs.pc++];
 
 	if (name_table[opcode] != NULL)
@@ -143,6 +160,14 @@ int8_t stepcpu(void)
 	case 0x05: rgs.b = dec(rgs.b); break;                          // DEC B
 	case 0x06: rgs.b = immediate(); break;                         // LD B, d8
 	case 0x32: memwrite(rgs.a, rgs.hl--); break;                   // LD (HL-), A
+	case 0x20:                                                     // JP NZ, r8
+		if (get_z()) {
+			rgs.pc += (int8_t)immediate();
+			cycles += 4;
+		} else {
+			++rgs.pc;
+		}
+		break;
 	default:
 		fprintf(stderr, "Unknown Opcode: $%.2X\n", opcode);
 		exit(EXIT_FAILURE);
@@ -161,9 +186,11 @@ void printcpu(void)
                "BC: $%.4X\n"
                "DE: $%.4X\n"
                "HL: $%.4X\n"
+               "Z: %d\nN: %d\nH: %d\nC: %d\n"
                "Cycles: %lld\n",
                rgs.pc, rgs.sp,
                rgs.af, rgs.bc,
                rgs.de, rgs.hl,
+               get_z(), get_n(), get_h(), get_c(),
                cycles);
 }
