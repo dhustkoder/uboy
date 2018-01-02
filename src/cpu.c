@@ -32,8 +32,8 @@ static const int8_t clock_table[256] = {
 
 static const char* const name_table[256] = {
 	[0x00] = "NOP", [0x05] = "DEC B", [0x06] = "LD B, d8",
-	[0x0E] = "LD C, d8", [0x0D] = "DEC C", [0x20] = "JP NZ, r8",
-	[0x21] = "LD HL, d16", [0x32] = "LD (HL-), A", 
+	[0x0E] = "LD C, d8", [0x0D] = "DEC C", [0x20] = "JR NZ, r8",
+	[0x21] = "LD HL, d16", [0x32] = "LD (HL-), A", [0x3E] = "LD A, d8",
 	[0xAF] = "XOR A", [0xC3] = "JP a16", [0xD0] = "RET NC"
 };
 
@@ -77,10 +77,17 @@ static uint8_t wram[8192];
 
 
 // flags set/get
-static void set_z(const bool value) { rgs.f |= ((value) != 0)<<7; }
-static void set_n(const bool value) { rgs.f |= ((value) != 0)<<6; }
-static void set_h(const bool value) { rgs.f |= ((value) != 0)<<5; }
-static void set_c(const bool value) { rgs.f |= ((value) != 0)<<4; }
+static void set_flag(const bool value, const int bit)
+{
+	if (value)
+		rgs.f |= 0x01<<bit;
+	else
+		rgs.f &= ~(0x01<<bit);
+}
+static void set_z(const bool value) { set_flag(value, 7); }
+static void set_n(const bool value) { set_flag(value, 6); }
+static void set_h(const bool value) { set_flag(value, 5); }
+static void set_c(const bool value) { set_flag(value, 4); }
 static uint8_t get_z(void) { return (rgs.f&(0x01<<7)) != 0; }
 static uint8_t get_n(void) { return (rgs.f&(0x01<<6)) != 0; }
 static uint8_t get_h(void) { return (rgs.f&(0x01<<5)) != 0; }
@@ -166,7 +173,7 @@ static void jp_a16(void)
 	rgs.pc = immediate16();
 }
 
-static void jp_r8(const bool cond)
+static void jr_r8(const bool cond)
 {
 	if (cond) {
 		rgs.pc += (int8_t)immediate();
@@ -179,6 +186,9 @@ static uint8_t xor(const uint8_t second)
 {
 	const uint8_t result = rgs.a ^ second;
 	set_z(result == 0);
+	set_n(0);
+	set_h(0);
+	set_c(0);
 	return result;
 }
 
@@ -217,14 +227,16 @@ int8_t stepcpu(void)
 	case 0x06: rgs.b = immediate();       break;                   // LD B, d8
 	case 0x0D: rgs.c = dec(rgs.c);        break;                   // DEC C
 	case 0x0E: rgs.c = immediate();       break;                   // LD C, d8
-	case 0x20: jp_r8(get_z() == 0);       break;                   // JP NZ, r8
+	case 0x20: jr_r8(get_z() == 0);       break;                   // JR NZ, r8
 	case 0x21: rgs.hl = immediate16();    break;                   // LD HL, d16
 	case 0x32: memwrite(rgs.a, rgs.hl--); break;                   // LD (HL-), A
+	case 0x3E: rgs.a = immediate();       break;                   // LD A, d8
 	case 0xAF: rgs.a = xor(rgs.a);        break;                   // XOR A
 	case 0xC3: jp_a16();                  break;                   // JP a16
 	case 0xD0: ret(rgs.c != 0);           break;                   // RET NC
 	default:
 		fprintf(stderr, "Unknown Opcode: $%.2X\n", opcode);
+		exit(EXIT_FAILURE);
 		break;
 	};
 
