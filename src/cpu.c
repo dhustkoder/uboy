@@ -86,23 +86,16 @@ static uint8_t get_n(void) { return (rgs.f&(0x01<<6)) != 0; }
 static uint8_t get_h(void) { return (rgs.f&(0x01<<5)) != 0; }
 static uint8_t get_c(void) { return (rgs.f&(0x01<<4)) != 0; }
 
-// machine operations
-static void addcycles(const int n)
-{
-	cycles += n;
-}
 
 // memory operations
 static uint8_t memread(const uint16_t addr)
 {
 	uint8_t val;
-	int ncycles = 4;
 
 	if (addr <= 0x7FFF) {
 		val = rom_data[addr];
 	} else if (addr >= 0xFF80 && addr <= 0xFFFE) {
 		val = zpram[addr - 0xFF80];
-		ncycles -= 2;
 	} else if (addr >= 0xC000 && addr <= 0xDFFF) {
 		val = wram[addr - 0xC000];
 	} else {
@@ -110,24 +103,18 @@ static uint8_t memread(const uint16_t addr)
 		fprintf(stderr, "memread Unknown Address: $%X", addr);
 	}
 
-	addcycles(ncycles);
 	return val;
 }
 
 static void memwrite(const uint8_t val, const uint16_t addr)
 {
-	int ncycles = 4;
-
 	if (addr >= 0xFF80 && addr <= 0xFFFE) {
 		zpram[addr - 0xFF80] = val;
-		ncycles -= 2;
 	} else if (addr >= 0xC000 && addr <= 0xDFFF) {
 		wram[addr - 0xC000] = val;
 	} else {
 		fprintf(stderr, "memwrite at Unknown Address: $%.4X value $%.2X\n", addr, val);
 	}
-	
-	addcycles(ncycles);
 }
 
 static uint16_t memread16(const uint16_t addr)
@@ -177,7 +164,6 @@ static void ret(const bool cond)
 static void jp_a16(void)
 {
 	rgs.pc = immediate16();
-	addcycles(8);
 }
 
 static void jp_r8(const bool cond)
@@ -223,7 +209,7 @@ int8_t stepcpu(void)
 	const uint8_t opcode = memread(rgs.pc++);
 
 	if (name_table[opcode] != NULL)
-		printf("Executing Instruction: %s\n", name_table[opcode]);
+		printf("Executing Instruction: $%.2X: %s\n", opcode, name_table[opcode]);
 
 	switch (opcode) {
 	case 0x00:                            break;                   // NOP
@@ -242,7 +228,8 @@ int8_t stepcpu(void)
 		break;
 	};
 
-	return 0;
+	cycles += clock_table[opcode];
+	return clock_table[opcode];
 }
 
 void printcpu(void)
