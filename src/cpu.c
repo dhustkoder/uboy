@@ -169,6 +169,12 @@ static void ret(const bool cond)
 		rgs.pc = stackpop16();
 }
 
+static void jp_a16(void)
+{
+	rgs.pc = immediate16();
+	addcycles(4);
+}
+
 static void jp_r8(const bool cond)
 {
 	if (cond) {
@@ -224,7 +230,7 @@ int8_t stepcpu(void)
 	case 0x21: rgs.hl = immediate16();    break;                   // LD HL, d16
 	case 0x32: memwrite(rgs.a, rgs.hl--); break;                   // LD (HL-), A
 	case 0xAF: rgs.a = xor(rgs.a);        break;                   // XOR A
-	case 0xC3: rgs.pc = immediate16();    break;                   // JP a16
+	case 0xC3: jp_a16();                  break;                   // JP a16
 	case 0xD0: ret(rgs.c != 0);           break;                   // RET NC
 	default:
 		fprintf(stderr, "Unknown Opcode: $%.2X\n", opcode);
