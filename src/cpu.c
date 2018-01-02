@@ -116,13 +116,18 @@ static uint8_t memread(const uint16_t addr)
 
 static void memwrite(const uint8_t val, const uint16_t addr)
 {
+	int ncycles = 4;
+
 	if (addr >= 0xFF80 && addr <= 0xFFFE) {
 		zpram[addr - 0xFF80] = val;
+		ncycles -= 2;
 	} else if (addr >= 0xC000 && addr <= 0xDFFF) {
 		wram[addr - 0xC000] = val;
 	} else {
 		fprintf(stderr, "memwrite at Unknown Address: $%.4X value $%.2X\n", addr, val);
 	}
+	
+	addcycles(ncycles);
 }
 
 static uint16_t memread16(const uint16_t addr)
@@ -172,7 +177,7 @@ static void ret(const bool cond)
 static void jp_a16(void)
 {
 	rgs.pc = immediate16();
-	addcycles(4);
+	addcycles(8);
 }
 
 static void jp_r8(const bool cond)
