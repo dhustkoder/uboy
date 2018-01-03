@@ -46,10 +46,10 @@ bool loadrom(const uint8_t* const data)
 	       "SGB Flag: $%X\n"
 	       "Rom Type: $%X\n"
 	       "Rom Number of ROM Banks: $%X\n"
-	       "Rom Size: $%X\n",
+	       "Rom Size: %d bytes\n",
 	       romtitle, cgbflag,
 	       sgbflag, romtype,
-	       rom_nrombanks, rom_nrombanks * 0x4000 * 0x10);
+	       rom_nrombanks, rom_nrombanks * 0x4000);
 
 
 	return true;
