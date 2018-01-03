@@ -54,8 +54,9 @@ int main(const int argc, const char* const * const argv)
 	if (data == NULL)
 		return EXIT_FAILURE;
 
+
 	int ret = EXIT_SUCCESS;
-	
+
 	if (!loadrom(data)) {
 		ret = EXIT_FAILURE;
 		goto Lfreedata;
