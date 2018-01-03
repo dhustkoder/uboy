@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
+#include "log.h"
 #include "rom.h"
 
 
 uint16_t rom_nrombanks = 0;
-uint8_t rom_data[0x4000 * 512];
+const uint8_t* rom_data = NULL;
 
 
 static char romtitle[16] = { '\0' };
@@ -15,38 +15,13 @@ static uint8_t sgbflag = 0;
 static uint8_t romtype = 0;
 
 
-static bool readfile(const char* const filename)
+bool loadrom(const uint8_t* const data)
 {
-	FILE* const file = fopen(filename, "r");
-	if (file == NULL) {
-		perror("Couldn't open file: ");
-		return false;
-	}
-
-	int ret = true;
-
-	fseek(file, 0, SEEK_END);
-	const long size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	if (fread(rom_data, 1, size, file) < (unsigned long)size) {
-		perror("Couldn't read file: ");
-		ret = false;
-	}
-
-	fclose(file);
-	return ret;
-}
-
-bool loadrom(const char* const filename)
-{
-	if (!readfile(filename))
-		return false;
-
+	rom_data = data;
 	memcpy(romtitle, &rom_data[0x134], 15);
 
 	if (strlen(romtitle) == 0) {
-		fprintf(stderr, "Couldn't read rom romtitle\n");
+		logerror("Couldn't read rom romtitle.\n");
 		return false;
 	}
 
@@ -62,11 +37,11 @@ bool loadrom(const char* const filename)
 	} else if (rom_data[0x148] >= 0x52 && rom_data[0x148] <= 0x54) {
 		rom_nrombanks = nbanks2[rom_data[0x148] - 0x52];
 	} else {
-		fprintf(stderr, "Couldn't read number of banks\n");
+		logerror("Couldn't read number of banks.\n");
 		return false;
 	}
 
-	printf("Rom Title: %s\n"
+	loginfo("Rom Title: %s\n"
 	       "CGB Flag: $%X\n"
 	       "SGB Flag: $%X\n"
 	       "Rom Type: $%X\n"
@@ -80,7 +55,8 @@ bool loadrom(const char* const filename)
 	return true;
 }
 
-void freerom(void)
+void unloadrom(void)
 {
+	rom_data = NULL;
 }
 

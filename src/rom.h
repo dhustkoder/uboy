@@ -3,8 +3,8 @@
 #include <stdbool.h>
 
 
-bool loadrom(const char* filename);
-void freerom(void);
+bool loadrom(const uint8_t* data);
+void unloadrom(void);
 
 
 

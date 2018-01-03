@@ -2,11 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "log.h"
 #include "cpu.h"
 
 // rom.c externals
 extern uint16_t rom_nrombanks;
-extern uint8_t rom_data[0x4000 * 512];
+extern const uint8_t* rom_data;
 
 
 // cpu.c
@@ -246,7 +247,7 @@ int8_t stepcpu(void)
 
 void printcpu(void)
 {
-	printf("PC: $%.4X\n"
+	loginfo("PC: $%.4X\n"
                "SP: $%.4X\n"
                "AF: $%.4X\n"
                "BC: $%.4X\n"
